@@ -1,0 +1,9 @@
+# macOS & iOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+xcuserdata/
+*.xcscmblueprint
+*.xcworkspace/
