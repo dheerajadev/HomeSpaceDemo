@@ -29,6 +29,7 @@ class LoadScannedRoomViewController: UIViewController {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .black
         view.allowsCameraControl = true // Enables default rotation/pan/zoom
+        view.autoenablesDefaultLighting = true
         return view
     }()
     
@@ -59,10 +60,9 @@ class LoadScannedRoomViewController: UIViewController {
         super.viewDidLoad()
         setUpViews()
         setUpConstraints()
-        setupScene()
+        //setupScene()
         setupNavigationBar()
         loadScannedRoom()
-        
     }
     
     // MARK: FUNCTIONS -
@@ -213,7 +213,9 @@ class LoadScannedRoomViewController: UIViewController {
         switch option {
         case .floorPlan:
             guard let model else { return }
-            let controller = FloorPlanViewController(capturedRoom: model)
+            
+            let controller = CustomFloorPlanViewController(capturedRoom: model)
+            //let controller = FloorPlanViewController(capturedRoom: model)
             navigationController?.pushViewController(controller, animated: true)
             
         case .blueprint:
@@ -221,73 +223,87 @@ class LoadScannedRoomViewController: UIViewController {
         }
     }
     
-    func loadScannedRoom() {
-        
+//    func loadScannedRoom() {
+//        
+//        let fileUrl = modelFileUrl
+//        debugLabel.text = "Loading model from: \(fileUrl.lastPathComponent)"
+//        
+//        do {
+//            
+//            // Try loading the .usdz model
+//            let scene = try SCNScene(url: fileUrl, options: [.checkConsistency: true])
+//            
+//            // Print the number of child nodes to help with debugging
+//            print("Root node has \(scene.rootNode.childNodes.count) child nodes.")
+//            
+//            // Get the root node of the loaded model
+//            modelNode = scene.rootNode.childNodes.first
+//            
+//            if let modelNode {
+//                // Create a container node for centering
+//                let containerNode = SCNNode()
+//                sceneView.scene?.rootNode.addChildNode(containerNode)
+//                containerNode.addChildNode(modelNode)
+//                
+//                // Calculate the bounding box of the model
+//                let boundingBox = modelNode.boundingBox
+//                let boundingBoxMin = boundingBox.min
+//                let boundingBoxMax = boundingBox.max
+//                
+//                // Calculate center offset
+//                let centerX = (boundingBoxMin.x + boundingBoxMax.x) / 2
+//                let centerY = (boundingBoxMin.y + boundingBoxMax.y) / 2
+//                let centerZ = (boundingBoxMin.z + boundingBoxMax.z) / 2
+//                
+//                // Move model to center
+//                modelNode.position = SCNVector3(-centerX, -centerY, -centerZ)
+//                
+//                // Calculate model size
+//                let modelSize = SCNVector3(
+//                    boundingBoxMax.x - boundingBoxMin.x,
+//                    boundingBoxMax.y - boundingBoxMin.y,
+//                    boundingBoxMax.z - boundingBoxMin.z
+//                )
+//                
+//                // Calculate scale to fit view
+//                let maxDimension = max(modelSize.x, max(modelSize.y, modelSize.z))
+//                let scale = 2.0 / maxDimension // Scale to fit in a 2x2x2 cube
+//                containerNode.scale = SCNVector3(scale, scale, scale)
+//                
+//                debugLabel.text = "Use pinch to zoom, pan to rotate, and two fingers to move"
+//                
+//                // Ensure model is visible
+//                sceneView.pointOfView = sceneView.scene?.rootNode.childNode(withName: "camera", recursively: true)
+//            } else {
+//                self.debugLabel.text = "Model not found!"
+//            }
+//            
+//        } catch {
+//            debugLabel.text = "Error: \(error.localizedDescription)"
+//            print("Failed to load model: \(error.localizedDescription)")
+//            
+//            let errorAlert = UIAlertController(
+//                title: "Error",
+//                message: "Failed to load room model: \(error.localizedDescription)",
+//                preferredStyle: .alert
+//            )
+//            errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
+//            present(errorAlert, animated: true)
+//        }
+//    }
+    
+    func loadScannedRoom(){
+
         let fileUrl = modelFileUrl
-        debugLabel.text = "Loading model from: \(fileUrl.lastPathComponent)"
-        
+
         do {
-            
-            // Try loading the .usdz model
-            let scene = try SCNScene(url: fileUrl, options: [.checkConsistency: true])
-            
-            // Print the number of child nodes to help with debugging
-            print("Root node has \(scene.rootNode.childNodes.count) child nodes.")
-            
-            // Get the root node of the loaded model
-            modelNode = scene.rootNode.childNodes.first
-            
-            if let modelNode {
-                // Create a container node for centering
-                let containerNode = SCNNode()
-                sceneView.scene?.rootNode.addChildNode(containerNode)
-                containerNode.addChildNode(modelNode)
-                
-                // Calculate the bounding box of the model
-                let boundingBox = modelNode.boundingBox
-                let boundingBoxMin = boundingBox.min
-                let boundingBoxMax = boundingBox.max
-                
-                // Calculate center offset
-                let centerX = (boundingBoxMin.x + boundingBoxMax.x) / 2
-                let centerY = (boundingBoxMin.y + boundingBoxMax.y) / 2
-                let centerZ = (boundingBoxMin.z + boundingBoxMax.z) / 2
-                
-                // Move model to center
-                modelNode.position = SCNVector3(-centerX, -centerY, -centerZ)
-                
-                // Calculate model size
-                let modelSize = SCNVector3(
-                    boundingBoxMax.x - boundingBoxMin.x,
-                    boundingBoxMax.y - boundingBoxMin.y,
-                    boundingBoxMax.z - boundingBoxMin.z
-                )
-                
-                // Calculate scale to fit view
-                let maxDimension = max(modelSize.x, max(modelSize.y, modelSize.z))
-                let scale = 2.0 / maxDimension // Scale to fit in a 2x2x2 cube
-                containerNode.scale = SCNVector3(scale, scale, scale)
-                
-                debugLabel.text = "Use pinch to zoom, pan to rotate, and two fingers to move"
-                
-                // Ensure model is visible
-                sceneView.pointOfView = sceneView.scene?.rootNode.childNode(withName: "camera", recursively: true)
-            } else {
-                self.debugLabel.text = "Model not found!"
-            }
-            
+            let scene = try SCNScene(url: fileUrl, options: nil)
+            scene.background.contents = UIColor.white
+            sceneView.scene = scene
         } catch {
-            debugLabel.text = "Error: \(error.localizedDescription)"
-            print("Failed to load model: \(error.localizedDescription)")
-            
-            let errorAlert = UIAlertController(
-                title: "Error",
-                message: "Failed to load room model: \(error.localizedDescription)",
-                preferredStyle: .alert
-            )
-            errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
-            present(errorAlert, animated: true)
+            print("Failed to load USDZ file: \(error.localizedDescription)")
         }
+        
     }
     
     private func showAlert(message: String) {
