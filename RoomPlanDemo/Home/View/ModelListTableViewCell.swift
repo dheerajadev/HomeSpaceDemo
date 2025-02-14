@@ -66,11 +66,6 @@ class ModelListTableViewCell: UITableViewCell {
             modelSizeLabel.topAnchor.constraint(equalTo: modelNameLabel.bottomAnchor, constant: 8),
             modelSizeLabel.trailingAnchor.constraint(equalTo: modelNameLabel.trailingAnchor)
         ])
-        
-        // Configure SCNView default settings
-        modelView.backgroundColor = .systemGray6
-        modelView.autoenablesDefaultLighting = true
-        modelView.allowsCameraControl = false
     }
     
     override func prepareForReuse() {
@@ -82,7 +77,7 @@ class ModelListTableViewCell: UITableViewCell {
     // MARK: - Configuration
     func configure(with model: SavedModel) {
         modelNameLabel.text = model.name
-        modelSizeLabel.text = model.size
+        modelSizeLabel.text = ""
         modelView.scene = model.modelScene
     }
 

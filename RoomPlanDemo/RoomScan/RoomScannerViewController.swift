@@ -80,8 +80,8 @@ class RoomScannerViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupNavigationBar()
         checkDeviceCompatibility()
-        setupImportButton()
         documentPicker.delegate = self
     }
     
@@ -97,8 +97,11 @@ class RoomScannerViewController: UIViewController {
     // MARK: FUNCTIONS -
     
     func updateUIState(isPlaceholderVisible: Bool, isScanningEnabled: Bool, isCurrentlyScanning: Bool? = nil) {
+        
+        if let roomCaptureView {
+            self.roomCaptureView.isHidden = isPlaceholderVisible
+        }
         placeholderView.isHidden = !isPlaceholderVisible
-        roomCaptureView.isHidden = isPlaceholderVisible
         startScanButton.isEnabled = isScanningEnabled
         
         let scanning = isCurrentlyScanning ?? isScanning
@@ -263,8 +266,20 @@ class RoomScannerViewController: UIViewController {
         present(alert, animated: true)
     }
     
-    // Add new method for import button setup
-    private func setupImportButton() {
+    private func setupNavigationBar() {
+        // Set title
+        title = "Room Scanner"
+        
+        // Configure back button
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left"),
+            style: .plain,
+            target: self,
+            action: #selector(backButtonTapped)
+        )
+        navigationItem.leftBarButtonItem?.tintColor = .white
+        
+        // Move import button to right side
         let importButton = UIBarButtonItem(
             image: UIImage(systemName: "square.and.arrow.down"),
             style: .plain,
@@ -272,7 +287,28 @@ class RoomScannerViewController: UIViewController {
             action: #selector(importButtonTapped)
         )
         importButton.tintColor = .white
-        navigationItem.leftBarButtonItem = importButton
+        navigationItem.rightBarButtonItem = importButton
+    }
+    
+    @objc private func backButtonTapped() {
+        // If scanning is in progress, show confirmation alert
+        if isScanning {
+            let alert = UIAlertController(
+                title: "Stop Scanning?",
+                message: "Going back will stop the current scan. Are you sure?",
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+            alert.addAction(UIAlertAction(title: "Stop & Go Back", style: .destructive) { [weak self] _ in
+                self?.roomCaptureView.captureSession.stop()
+                self?.navigationController?.popViewController(animated: true)
+            })
+            
+            present(alert, animated: true)
+        } else {
+            navigationController?.popViewController(animated: true)
+        }
     }
     
     // Add import button action
@@ -306,6 +342,10 @@ extension RoomScannerViewController: RoomCaptureSessionDelegate {
         print("\nRoom added to session")
     }
     
+    func captureSession(_ session: RoomCaptureSession, didProvide instruction: RoomCaptureSession.Instruction) {
+        print("Instructions: \(instruction)")
+    }
+    
     func captureSession(_ session: RoomCaptureSession, didEndWith data: CapturedRoomData, error: Error?) {
         guard error == nil else {
             print("Error during scanning: \(error!.localizedDescription)")
@@ -317,22 +357,20 @@ extension RoomScannerViewController: RoomCaptureSessionDelegate {
                 let finalRoom = try await RoomBuilder(options: [.beautifyObjects])
                     .capturedRoom(from: data)
                 
-                let timeStamp = Int(Date().timeIntervalSince1970)
-                let fileURL = FileManager.default.temporaryDirectory
-                    .appendingPathComponent("RoomModel_\(timeStamp).usdz")
+                // Save the captured room
+                try RoomModelManager.shared.saveRoom(
+                    finalRoom,
+                    data,
+                    name: "Room \(Date().formatted(date: .abbreviated, time: .shortened))"
+                )
                 
-                try finalRoom.export(to: fileURL)
-                print("Final model exported to: \(fileURL)")
                 
                 DispatchQueue.main.async { [weak self] in
-                    self?.lastScannedRoom = (model: finalRoom, url: fileURL)
                     self?.debugLabel.isHidden = false
-                    self?.debugLabel.text = "Room scan completed"
+                    self?.debugLabel.text = "Room scan completed and saved"
                     
-                    if let scannedRoom = self?.lastScannedRoom {
-                        let viewController = LoadScannedRoomViewController(model: scannedRoom.model, url: scannedRoom.url)
-                        self?.navigationController?.pushViewController(viewController, animated: true)
-                    }
+                    // Navigate to home screen to see saved models
+                    self?.navigationController?.popToRootViewController(animated: true)
                     
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                         self?.debugLabel.isHidden = true

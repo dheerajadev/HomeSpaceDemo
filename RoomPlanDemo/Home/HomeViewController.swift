@@ -20,23 +20,78 @@ class HomeViewController: UIViewController {
         return table
     }()
     
+    private let emptyStateView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isHidden = true
+        return view
+    }()
+    
+    private let emptyStateImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        imageView.image = UIImage(systemName: "cube.transparent")
+        imageView.tintColor = .gray
+        return imageView
+    }()
+    
+    private let emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "No rooms scanned yet\nTap + to scan a new room"
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.textColor = .gray
+        return label
+    }()
+    
     var savedModels: [SavedModel] = []
     private let loadingIndicator = UIActivityIndicatorView(style: .large)
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupNavigationBar()
         setupViews()
         setupTableView()
         loadSavedModels()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Reload data when returning to this screen
+        loadSavedModels()
+    }
+    
     // MARK: - Setup Methods
+    private func setupNavigationBar() {
+        title = "Saved Rooms"
+        navigationController?.navigationBar.prefersLargeTitles = true
+        
+        let addButton = UIBarButtonItem(
+            image: UIImage(systemName: "plus"),
+            style: .plain,
+            target: self,
+            action: #selector(addButtonTapped)
+        )
+        navigationItem.rightBarButtonItem = addButton
+    }
+    
     private func setupViews() {
+        view.backgroundColor = .systemBackground
+        
+        // Add views
         view.addSubview(tableView)
         view.addSubview(loadingIndicator)
+        view.addSubview(emptyStateView)
+        
+        // Add empty state subviews
+        emptyStateView.addSubview(emptyStateImageView)
+        emptyStateView.addSubview(emptyStateLabel)
         
         loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -44,7 +99,24 @@ class HomeViewController: UIViewController {
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
             loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            
+            // Empty state view constraints
+            emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            
+            emptyStateImageView.centerXAnchor.constraint(equalTo: emptyStateView.centerXAnchor),
+            emptyStateImageView.topAnchor.constraint(equalTo: emptyStateView.topAnchor),
+            emptyStateImageView.widthAnchor.constraint(equalToConstant: 80),
+            emptyStateImageView.heightAnchor.constraint(equalToConstant: 80),
+            
+            emptyStateLabel.topAnchor.constraint(equalTo: emptyStateImageView.bottomAnchor, constant: 20),
+            emptyStateLabel.centerXAnchor.constraint(equalTo: emptyStateView.centerXAnchor),
+            emptyStateLabel.leadingAnchor.constraint(equalTo: emptyStateView.leadingAnchor),
+            emptyStateLabel.trailingAnchor.constraint(equalTo: emptyStateView.trailingAnchor),
+            emptyStateLabel.bottomAnchor.constraint(equalTo: emptyStateView.bottomAnchor)
         ])
     }
     
@@ -54,38 +126,36 @@ class HomeViewController: UIViewController {
         tableView.rowHeight = 100 // Cell height + padding
     }
     
+    // MARK: - Actions
+    @objc private func addButtonTapped() {
+        let scannerVC = RoomScannerViewController()
+        navigationController?.pushViewController(scannerVC, animated: true)
+    }
+    
     // MARK: - Data Loading
     private func loadSavedModels() {
         loadingIndicator.startAnimating()
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            
-            let models = [
-                SavedModel(
-                    name: "Main room",
-                    size: "20' x 15'",
-                    modelScene: self.loadUSDZScene(named: "model1.usdz"),
-                    fileName: "model1.usdz"
-                ),
-                SavedModel(
-                    name: "HR room", size: "15' x 12'",
-                    modelScene: self.loadUSDZScene(named: "model2.usdz"),
-                    fileName: "model2.usdz"
-                ),
-                SavedModel(
-                    name: "Reception room",
-                    size: "12' x 10'",
-                    modelScene: self.loadUSDZScene(named: "model3.usdz"),
-                    fileName: "model3.usdz"
-                )
-            ]
-            
-            DispatchQueue.main.async {
-                self.savedModels = models
-                self.tableView.reloadData()
-                self.loadingIndicator.stopAnimating()
-                self.loadingIndicator.removeFromSuperview()
+            do {
+                let models = try RoomModelManager.shared.loadSavedModels()
+                
+                DispatchQueue.main.async {
+                    self?.savedModels = models
+                    self?.tableView.reloadData()
+                    self?.loadingIndicator.stopAnimating()
+                    self?.loadingIndicator.removeFromSuperview()
+                    
+                    // Show/hide empty state
+                    self?.emptyStateView.isHidden = !models.isEmpty
+                    self?.tableView.isHidden = models.isEmpty
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self?.showAlert(message: "Failed to load saved models: \(error.localizedDescription)")
+                    self?.loadingIndicator.stopAnimating()
+                    self?.loadingIndicator.removeFromSuperview()
+                }
             }
         }
     }
@@ -107,12 +177,4 @@ class HomeViewController: UIViewController {
         }
     }
 
-}
-
-// MARK: - Model
-struct SavedModel {
-    let name: String
-    let size: String
-    let modelScene: SCNScene?
-    let fileName: String?
 }

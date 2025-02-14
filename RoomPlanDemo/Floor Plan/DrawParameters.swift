@@ -8,11 +8,11 @@
 import UIKit
 
 // Universal scaling factor
-let scalingFactor: CGFloat = 200
+let scalingFactor: CGFloat = 100
 
 // Colors
-let floorPlanBackgroundColor = UIColor.white
-let floorPlanSurfaceColor = UIColor.orange
+let floorPlanBackgroundColor = UIColor.black
+let floorPlanSurfaceColor = UIColor.white
 
 // Line widths
 let surfaceWith: CGFloat = 22.0

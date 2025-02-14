@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import RoomPlan
 
 extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     
@@ -27,16 +28,39 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        guard let fileName = savedModels[indexPath.row].fileName else { return }
-        guard let url = Bundle.main.url(forResource: fileName.components(separatedBy: ".").first,
-                                        withExtension: "usdz") else {
-            print("Failed to find USDZ file: \(fileName)")
-            return
+        let model = savedModels[indexPath.row]
+        
+        let fileURL = RoomModelManager.shared.modelsDirectory.appendingPathComponent(model.fileName)
+                print("USDZ file URL: \(fileURL)")
+        
+        print("Captured Structure --> \(model.roomData)")
+        let capturedStructure = model.roomData
+        let capturedRoom = capturedStructure.rooms.first
+                
+        Task {
+            do {
+                DispatchQueue.main.async { [weak self] in
+                    let viewController = LoadScannedRoomViewController(model: capturedRoom, url: fileURL)
+                    self?.navigationController?.pushViewController(viewController, animated: true)
+                }
+            } catch {
+                print("Processing error: \(error.localizedDescription)")
+                DispatchQueue.main.async { [weak self] in
+                    self?.showAlert(message: "Failed to reconstructed room: \(error.localizedDescription)")
+                }
+            }
         }
         
-        let viewController = LoadScannedRoomViewController(model: nil, url: url)
-        self.navigationController?.pushViewController(viewController, animated: true)
-        
+    }
+    
+    func showAlert(message: String) {
+        let alert = UIAlertController(
+            title: "Alert",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
     
 }
