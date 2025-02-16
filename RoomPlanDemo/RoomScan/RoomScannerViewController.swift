@@ -364,6 +364,12 @@ extension RoomScannerViewController: RoomCaptureSessionDelegate {
                     name: "Room \(Date().formatted(date: .abbreviated, time: .shortened))"
                 )
                 
+                let fileName = "room_\(Date().timeIntervalSince1970).usdz"
+                let fileUrl = FileManager.default.documentDirectory
+                    .appendingPathComponent("Models", isDirectory: true).appendingPathComponent(fileName)
+                
+                // Export USDZ file
+                try finalRoom.export(to: fileUrl)
                 
                 DispatchQueue.main.async { [weak self] in
                     self?.debugLabel.isHidden = false
@@ -371,6 +377,9 @@ extension RoomScannerViewController: RoomCaptureSessionDelegate {
                     
                     // Navigate to home screen to see saved models
                     self?.navigationController?.popToRootViewController(animated: true)
+
+                    let viewController = LoadScannedRoomViewController(model: finalRoom, url: fileUrl)
+                    self?.navigationController?.pushViewController(viewController, animated: true)
                     
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                         self?.debugLabel.isHidden = true

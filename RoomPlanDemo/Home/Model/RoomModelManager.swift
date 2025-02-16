@@ -50,9 +50,6 @@ class RoomModelManager {
         // Convert CapturedRoomData to Data
         do {
             
-            //let roomData = try JSONEncoder().encode(roomData) as Data
-            //let roomData = try JSONEncoder().encode(room) as Data
-            
             let encodedData = try JSONEncoder().encode(room) as Data
             
             // Create and save metadata
