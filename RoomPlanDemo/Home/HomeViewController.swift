@@ -170,6 +170,19 @@ class HomeViewController: UIViewController {
         do {
             let scene = try SCNScene(url: url, options: nil)
             scene.background.contents = UIColor.white
+            
+            // Process and color the nodes
+            scene.rootNode.enumerateChildNodes { (node, _) in
+                // Color based on node name or geometry
+                if node.name?.lowercased().contains("floor") == true {
+                    node.geometry?.firstMaterial?.diffuse.contents = UIColor.darkGray
+                } else if node.name?.lowercased().contains("wall") == true {
+                    node.geometry?.firstMaterial?.diffuse.contents = UIColor(hex: "#B0C4DE", alpha: 0.6)
+                } else if node.geometry != nil {
+                    node.geometry?.firstMaterial?.diffuse.contents = UIColor(hex: "#B5A999")
+                }
+            }
+            
             return scene
         } catch {
             print("Failed to load USDZ file: \(error.localizedDescription)")

@@ -52,13 +52,13 @@ class FloorPlanObject: SKNode {
         // A shape to fill the object
         let objectShape = SKShapeNode(rect: objectRect)
         objectShape.strokeColor = .clear
-        objectShape.fillColor = floorPlanSurfaceColor
+        objectShape.fillColor = objectColor
         objectShape.alpha = 0.3
         objectShape.zPosition = objectZPosition
         
         // And another shape for the outline
         let objectOutlineShape = SKShapeNode(rect: objectRect)
-        objectOutlineShape.strokeColor = floorPlanSurfaceColor
+        objectOutlineShape.strokeColor = objectColor
         objectOutlineShape.lineWidth = objectOutlineWidth
         objectOutlineShape.lineJoin = .miter
         objectOutlineShape.zPosition = objectOutlineZPosition

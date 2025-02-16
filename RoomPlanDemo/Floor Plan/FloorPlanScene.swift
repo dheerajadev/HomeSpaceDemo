@@ -26,9 +26,9 @@ class FloorPlanScene: SKScene {
         self.surfaces = capturedRoom.doors + capturedRoom.openings + capturedRoom.walls + capturedRoom.windows
         self.objects = capturedRoom.objects
         
-        super.init(size: CGSize(width: 1500, height: 1500))
+        super.init(size: CGSize(width: 500, height: 500))
         
-        self.scaleMode = .aspectFill
+        self.scaleMode = .aspectFit
         self.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         self.backgroundColor = floorPlanBackgroundColor
         
@@ -39,6 +39,8 @@ class FloorPlanScene: SKScene {
     }
     
     override func didMove(to view: SKView) {
+        super.didMove(to: view)
+        
         let panGestureRecognizer = UIPanGestureRecognizer()
         panGestureRecognizer.addTarget(self, action: #selector(panGestureAction(_:)))
         view.addGestureRecognizer(panGestureRecognizer)
@@ -71,8 +73,11 @@ class FloorPlanScene: SKScene {
     private func addCamera() {
         let cameraNode = SKCameraNode()
         addChild(cameraNode)
-        
         self.camera = cameraNode
+    }
+    
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
     }
     
     // MARK: - ACTIONS
