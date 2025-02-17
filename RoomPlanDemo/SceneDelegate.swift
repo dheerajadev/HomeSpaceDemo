@@ -17,7 +17,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.windowScene = windowScene
         
-        let controller = RoomScannerViewController()
+        let controller = HomeViewController()
         let navController = UINavigationController(rootViewController: controller)
         window?.rootViewController = navController
         
